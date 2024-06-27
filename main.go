@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"log"
 	"os"
-
-	"github.com/dusmcd/pokedexcli/commands"
 )
 
 func main() {
+	fmt.Print("Welcome to the Pokedex! Type help for valid commands.\n\n")
 	session()
 	fmt.Println("Thank you for using Pokedex CLI.")
 }
@@ -38,8 +37,8 @@ func session() {
 		if userInput == "exit" {
 			break
 		}
-		command := commands.Command(userInput)
-		action := command.callback
+		command := getCommand(userInput)
+		action := command.Callback
 		action()
 	}
 
