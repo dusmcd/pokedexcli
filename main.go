@@ -29,6 +29,10 @@ func getUserInput() (string, error) {
 }
 
 func session() {
+	config := config{
+		next:     "https://pokeapi.co/api/v2/location/",
+		previous: "",
+	}
 	for {
 		userInput, err := getUserInput()
 		if err != nil {
@@ -38,8 +42,7 @@ func session() {
 			break
 		}
 		command := getCommand(userInput)
-		action := command.Callback
-		action()
+		command.callback(&config)
 	}
 
 }
