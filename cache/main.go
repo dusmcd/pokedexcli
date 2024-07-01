@@ -10,22 +10,31 @@ type Cache struct {
 	mu         *sync.Mutex
 }
 
-func NewCache(interval int) *Cache {
+func NewCache(intervalInSeconds int) *Cache {
 	// create a new cache
-	ticker := time.Tick(time.Duration(interval) * time.Second)
+	ticker := time.Tick(time.Duration(intervalInSeconds) * time.Second)
 	cache := Cache{
 		cacheEntry: make(map[string]cacheEntry),
 		mu:         &sync.Mutex{},
 	}
-	go reapLooper(ticker)
+	go reapLooper(ticker, &cache, intervalInSeconds)
 	return &cache
 }
 
-func reapLooper(ticker <-chan time.Time) {
+func reapLooper(ticker <-chan time.Time, cache *Cache, intervalInSeconds int) {
 	for {
 		select {
 		case <-ticker:
 			// delete cache entries as necessary
+			for entry := range cache.cacheEntry {
+				cache.mu.Lock()
+				timeCreated := cache.cacheEntry[entry].createdAt
+				differenceInSeconds := time.Since(timeCreated).Seconds()
+				if differenceInSeconds > float64(intervalInSeconds) {
+					delete(cache.cacheEntry, entry)
+				}
+				cache.mu.Unlock()
+			}
 		default:
 			time.Sleep(1 * time.Second)
 		}

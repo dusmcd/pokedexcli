@@ -67,10 +67,8 @@ func showPreviousLocations(config *config, cacheStruct *cache.Cache) {
 	go cacheStruct.GetEntry(fmt.Sprintf("Page %d", config.page), ch)
 	cacheData := <-ch
 	if cacheData.Found {
-		fmt.Println("page found in cache!")
 		err = json.Unmarshal(cacheData.Val, &location)
 	} else {
-		fmt.Println("making network request")
 		location, rawData, err = pokeapi.GetLocationData(config.previous)
 		go cacheStruct.AddEntry(fmt.Sprintf("Page %d", config.page), rawData)
 	}
@@ -103,10 +101,8 @@ func showNextLocations(config *config, cacheStruct *cache.Cache) {
 	go cacheStruct.GetEntry(fmt.Sprintf("Page %d", config.page), ch)
 	cacheData := <-ch
 	if cacheData.Found {
-		fmt.Println("page found in cache!!")
 		err = json.Unmarshal(cacheData.Val, &location)
 	} else {
-		fmt.Println("making network request")
 		location, rawData, err = pokeapi.GetLocationData(config.next)
 		go cacheStruct.AddEntry(fmt.Sprintf("Page %d", config.page), rawData)
 	}

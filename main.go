@@ -37,7 +37,7 @@ func session() {
 	}
 	reader := bufio.NewReader(os.Stdin)
 	scanner := bufio.NewScanner(reader)
-	cache := cache.NewCache(5)
+	cache := cache.NewCache(10)
 	for {
 		userInput, err := getUserInput(scanner)
 		if err != nil {
