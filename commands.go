@@ -1,21 +1,32 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 
+	"github.com/dusmcd/pokedexcli/cache"
 	"github.com/dusmcd/pokedexcli/pokeapi"
 )
 
 type config struct {
 	next     string
 	previous string
+	page     int
+}
+
+func (c *config) setPage(command string) {
+	if command == "next" {
+		c.page++
+	} else if command == "previous" {
+		c.page--
+	}
 }
 
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(config *config)
+	callback    func(config *config, cache *cache.Cache)
 }
 
 /*
@@ -41,14 +52,32 @@ func getCommandTypes() map[string]cliCommand {
 	}
 }
 
-func showPreviousLocations(config *config) {
+func showPreviousLocations(config *config, cacheStruct *cache.Cache) {
 	if config.previous == "" {
 		fmt.Println("Previous page does not exist")
 		return
 	}
-	location, err := pokeapi.GetLocationData(config.previous)
+	config.setPage("previous")
+	location := pokeapi.Location{}
+	var err error
+	var rawData []byte
+
+	// checking cache
+	ch := make(chan cache.CacheData)
+	go cacheStruct.GetEntry(fmt.Sprintf("Page %d", config.page), ch)
+	cacheData := <-ch
+	if cacheData.Found {
+		fmt.Println("page found in cache!")
+		err = json.Unmarshal(cacheData.Val, &location)
+	} else {
+		fmt.Println("making network request")
+		location, rawData, err = pokeapi.GetLocationData(config.previous)
+		go cacheStruct.AddEntry(fmt.Sprintf("Page %d", config.page), rawData)
+	}
+
 	if err != nil {
 		log.Fatal(err)
+		return
 	}
 	if location.Previous != nil {
 		config.previous = location.Previous.(string)
@@ -56,26 +85,50 @@ func showPreviousLocations(config *config) {
 		config.previous = ""
 	}
 	config.next = location.Next
+	fmt.Printf("Page %d\n", config.page)
 	for _, result := range location.Results {
-		fmt.Printf("Name: %s, URL: %s\n", result.Name, result.URL)
+		fmt.Println(result.Name)
 	}
 	fmt.Print("\n")
 }
 
-func showNextLocations(config *config) {
-	location, err := pokeapi.GetLocationData(config.next)
+func showNextLocations(config *config, cacheStruct *cache.Cache) {
+	var err error
+	location := pokeapi.Location{}
+	var rawData []byte
+	config.setPage("next")
+
+	// checking cache
+	ch := make(chan cache.CacheData)
+	go cacheStruct.GetEntry(fmt.Sprintf("Page %d", config.page), ch)
+	cacheData := <-ch
+	if cacheData.Found {
+		fmt.Println("page found in cache!!")
+		err = json.Unmarshal(cacheData.Val, &location)
+	} else {
+		fmt.Println("making network request")
+		location, rawData, err = pokeapi.GetLocationData(config.next)
+		go cacheStruct.AddEntry(fmt.Sprintf("Page %d", config.page), rawData)
+	}
+
 	if err != nil {
 		log.Fatal(err)
+		return
 	}
-	config.previous = config.next
+	if location.Previous == nil {
+		config.previous = ""
+	} else {
+		config.previous = location.Previous.(string)
+	}
 	config.next = location.Next
+	fmt.Printf("Page %d\n", config.page)
 	for _, result := range location.Results {
-		fmt.Printf("Name: %s, URL: %s\n", result.Name, result.URL)
+		fmt.Println(result.Name)
 	}
 	fmt.Print("\n")
 }
 
-func helpMenu(config *config) {
+func helpMenu(config *config, cache *cache.Cache) {
 	fmt.Print("Usage:\n\n")
 	commands := getCommandTypes()
 	for command := range commands {
@@ -85,7 +138,7 @@ func helpMenu(config *config) {
 	fmt.Print("\n")
 }
 
-func errorMessage(config *config) {
+func errorMessage(config *config, cache *cache.Cache) {
 	fmt.Println("Invalid command")
 }
 

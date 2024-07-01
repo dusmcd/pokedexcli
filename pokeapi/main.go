@@ -20,27 +20,28 @@ type Location struct {
 /*
 make http request to the PokeAPI to get location data
 */
-func GetLocationData(url string) (Location, error) {
+func GetLocationData(url string) (Location, []byte, error) {
 	location := Location{}
+	rawData := []byte{}
 	res, err := http.Get(url)
 	if err != nil {
 		log.Fatal(err)
-		return location, err
+		return location, rawData, err
 	}
-	body, err := io.ReadAll(res.Body)
+	rawData, err = io.ReadAll(res.Body)
 	res.Body.Close()
 	if res.StatusCode > 299 {
 		log.Fatal("Some sort of HTTP error")
-		return location, err
+		return location, rawData, err
 	}
 	if err != nil {
 		log.Fatal(err)
-		return location, err
+		return location, rawData, err
 	}
-	err = json.Unmarshal(body, &location)
+	err = json.Unmarshal(rawData, &location)
 	if err != nil {
 		log.Fatal(err)
-		return location, err
+		return location, rawData, err
 	}
-	return location, nil
+	return location, rawData, nil
 }

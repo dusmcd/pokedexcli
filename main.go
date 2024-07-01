@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	"github.com/dusmcd/pokedexcli/cache"
 )
 
 func main() {
@@ -13,14 +15,13 @@ func main() {
 	fmt.Println("Thank you for using Pokedex CLI.")
 }
 
-func getUserInput() (string, error) {
+func getUserInput(scanner *bufio.Scanner) (string, error) {
 	fmt.Print("pokedex > ")
-	reader := bufio.NewReader(os.Stdin)
-	scanner := bufio.NewScanner(reader)
-	scanner.Scan()
+	scan := scanner.Scan()
 	input := scanner.Text()
 
-	if scanner.Err() != nil {
+	err := scanner.Err()
+	if !scan && err != nil {
 		log.Fatal(scanner.Err())
 		return "", scanner.Err()
 	}
@@ -32,9 +33,13 @@ func session() {
 	config := config{
 		next:     "https://pokeapi.co/api/v2/location/",
 		previous: "",
+		page:     0,
 	}
+	reader := bufio.NewReader(os.Stdin)
+	scanner := bufio.NewScanner(reader)
+	cache := cache.NewCache(5)
 	for {
-		userInput, err := getUserInput()
+		userInput, err := getUserInput(scanner)
 		if err != nil {
 			break
 		}
@@ -42,7 +47,7 @@ func session() {
 			break
 		}
 		command := getCommand(userInput)
-		command.callback(&config)
+		command.callback(&config, cache)
 	}
 
 }
