@@ -42,7 +42,7 @@ func session() {
 	for {
 		userInput, err := getUserInput(scanner)
 		if err != nil {
-			break
+			continue
 		}
 		if userInput == "exit" {
 			break
@@ -55,7 +55,11 @@ func session() {
 		}
 
 		command := getCommand(userInput)
-		command.callback(&config, cache)
+		err = command.callback(&config, cache)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
 	}
 
 }

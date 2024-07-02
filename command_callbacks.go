@@ -2,24 +2,25 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-	"log"
 
 	"github.com/dusmcd/pokedexcli/cache"
 	"github.com/dusmcd/pokedexcli/pokeapi"
 )
 
-func showPreviousLocations(config *config, cacheStruct *cache.Cache) {
+/*
+callback function for mapb command
+*/
+func showPreviousLocations(config *config, cacheStruct *cache.Cache) error {
 	if config.previous == "" {
-		fmt.Println("Previous page does not exist")
-		return
+		return errors.New("previous page does not exist")
 	}
 	config.setPage("previous")
 	ch := make(chan cache.CacheData)
 	location, err := getPreviousLocations(ch, config.page, config.previous, cacheStruct)
 	if err != nil {
-		log.Fatal(err)
-		return
+		return err
 	}
 
 	if location.Previous != nil {
@@ -33,6 +34,7 @@ func showPreviousLocations(config *config, cacheStruct *cache.Cache) {
 		fmt.Println(result.Name)
 	}
 	fmt.Print("\n")
+	return nil
 }
 
 func getPreviousLocations(ch chan cache.CacheData, page int, prevUrl string, cacheStruct *cache.Cache) (pokeapi.Location, error) {
@@ -57,14 +59,16 @@ func getPreviousLocations(ch chan cache.CacheData, page int, prevUrl string, cac
 
 }
 
-func showNextLocations(config *config, cacheStruct *cache.Cache) {
+/*
+callback function for map command
+*/
+func showNextLocations(config *config, cacheStruct *cache.Cache) error {
 	config.setPage("next")
 
 	ch := make(chan cache.CacheData)
 	location, err := getNextLocations(ch, config.page, config.next, cacheStruct)
 	if err != nil {
-		log.Fatal(err)
-		return
+		return err
 	}
 
 	if location.Previous == nil {
@@ -78,6 +82,7 @@ func showNextLocations(config *config, cacheStruct *cache.Cache) {
 		fmt.Println(result.Name)
 	}
 	fmt.Print("\n")
+	return nil
 }
 
 func getNextLocations(ch chan cache.CacheData, page int, nextUrl string, cacheStruct *cache.Cache) (pokeapi.Location, error) {
@@ -102,7 +107,10 @@ func getNextLocations(ch chan cache.CacheData, page int, nextUrl string, cacheSt
 
 }
 
-func helpMenu(config *config, cache *cache.Cache) {
+/*
+callback function for help command
+*/
+func helpMenu(config *config, cache *cache.Cache) error {
 	fmt.Print("Usage:\n\n")
 	commands := getCommandTypes()
 	for command := range commands {
@@ -110,16 +118,21 @@ func helpMenu(config *config, cache *cache.Cache) {
 	}
 	fmt.Println("exit: Exits the pokedex")
 	fmt.Print("\n")
+	return nil
 }
 
-func errorMessage(config *config, cache *cache.Cache) {
+/*
+callback function for invalid command
+*/
+func errorMessage(config *config, cache *cache.Cache) error {
 	fmt.Println("Invalid command")
+	return nil
 }
 
 func getPokemonInLocation(config *config, cacheStruct *cache.Cache) (pokeapi.Pokemon, error) {
 	url := "https://pokeapi.co/api/v2/location/" + config.argument
 	var err error
-	var rawData []byte
+	//var rawData []byte
 	ch := make(chan cache.CacheData)
 	go cacheStruct.GetEntry(config.argument, ch)
 	cacheData := <-ch
@@ -127,27 +140,27 @@ func getPokemonInLocation(config *config, cacheStruct *cache.Cache) (pokeapi.Pok
 	if cacheData.Found {
 		err = json.Unmarshal(cacheData.Val, &pokemon)
 	} else {
-		pokemon, rawData, err = pokeapi.GetPokemonInLocation(url)
-		go cacheStruct.AddEntry(config.argument, rawData)
+		pokemon, _, err = pokeapi.GetPokemonInLocation(url)
+		// go cacheStruct.AddEntry(config.argument, rawData)
 	}
-
 	if err != nil {
-		log.Fatal(err)
 		return pokeapi.Pokemon{}, err
 	}
-
 	return pokemon, nil
 }
 
-func showPokemonInLocation(config *config, cacheStruct *cache.Cache) {
+/*
+callback function for explore <location> command
+*/
+func showPokemonInLocation(config *config, cacheStruct *cache.Cache) error {
 	pokemon, err := getPokemonInLocation(config, cacheStruct)
 	if err != nil {
-		log.Fatal(err)
-		return
+		return err
 	}
-	fmt.Println(pokemon.Location.Name)
+	fmt.Println("Exploring " + pokemon.Location.Name + "...")
 	for _, pokemonEncounter := range pokemon.PokemonEncounters {
 		fmt.Println("-" + pokemonEncounter.Pokemon.Name)
 	}
 	fmt.Print("\n")
+	return nil
 }

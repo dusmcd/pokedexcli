@@ -2,8 +2,8 @@ package pokeapi
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
-	"log"
 	"net/http"
 )
 
@@ -104,22 +104,18 @@ func GetLocationData(url string) (Location, []byte, error) {
 	location := Location{}
 	res, err := http.Get(url)
 	if err != nil {
-		log.Fatal(err)
 		return location, []byte{}, err
 	}
 	rawData, err := io.ReadAll(res.Body)
 	res.Body.Close()
 	if res.StatusCode > 299 {
-		log.Fatal("Some sort of HTTP error")
 		return location, []byte{}, err
 	}
 	if err != nil {
-		log.Fatal(err)
 		return location, []byte{}, err
 	}
 	err = json.Unmarshal(rawData, &location)
 	if err != nil {
-		log.Fatal(err)
 		return location, []byte{}, err
 	}
 	return location, rawData, nil
@@ -128,29 +124,29 @@ func GetLocationData(url string) (Location, []byte, error) {
 func getLocationUrl(url string) (string, error) {
 	res, err := http.Get(url)
 	if err != nil {
-		log.Fatal(err)
 		return "", err
 	}
 	rawData, err := io.ReadAll(res.Body)
 	res.Body.Close()
 
 	if res.StatusCode > 299 {
-		log.Fatal("HTTP error")
 		return "", err
 	}
 	if err != nil {
-		log.Fatal(err)
 		return "", err
 	}
 
 	var locationDetail locationDetail
 	err = json.Unmarshal(rawData, &locationDetail)
 	if err != nil {
-		log.Fatal(err)
 		return "", err
 	}
 
-	return locationDetail.Areas[0].URL, err
+	if len(locationDetail.Areas) == 0 {
+		return "", errors.New("no Pokemon found at this location")
+	}
+
+	return locationDetail.Areas[0].URL, nil
 
 }
 
@@ -159,18 +155,15 @@ func GetPokemonInLocation(url string) (Pokemon, []byte, error) {
 
 	pokemonUrl, err := getLocationUrl(url)
 	if err != nil {
-		log.Fatal(err)
 		return pokemon, []byte{}, err
 	}
 
 	res, err := http.Get(pokemonUrl)
+	if err != nil {
+		return pokemon, []byte{}, err
+	}
 
 	if res.StatusCode > 299 {
-		log.Fatal("HTTP error")
-		return pokemon, []byte{}, nil
-	}
-	if err != nil {
-		log.Fatal(err)
 		return pokemon, []byte{}, err
 	}
 
@@ -178,13 +171,11 @@ func GetPokemonInLocation(url string) (Pokemon, []byte, error) {
 	res.Body.Close()
 
 	if err != nil {
-		log.Fatal(err)
 		return Pokemon{}, []byte{}, err
 	}
 
 	err = json.Unmarshal(rawData, &pokemon)
 	if err != nil {
-		log.Fatal(err)
 		return pokemon, []byte{}, err
 	}
 	return pokemon, rawData, nil

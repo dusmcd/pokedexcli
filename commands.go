@@ -22,7 +22,7 @@ func (c *config) setPage(command string) {
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(config *config, cache *cache.Cache)
+	callback    func(config *config, cache *cache.Cache) error
 }
 
 /*
