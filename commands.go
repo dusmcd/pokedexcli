@@ -1,18 +1,14 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
-
 	"github.com/dusmcd/pokedexcli/cache"
-	"github.com/dusmcd/pokedexcli/pokeapi"
 )
 
 type config struct {
 	next     string
 	previous string
 	page     int
+	argument string
 }
 
 func (c *config) setPage(command string) {
@@ -49,93 +45,12 @@ func getCommandTypes() map[string]cliCommand {
 			description: "Displays the name of the previous 20 location areas.",
 			callback:    showPreviousLocations,
 		},
+		"explore": {
+			name:        "explore <location>",
+			description: "Shows the pokemon found in the given <location>",
+			callback:    showPokemonInLocation,
+		},
 	}
-}
-
-func showPreviousLocations(config *config, cacheStruct *cache.Cache) {
-	if config.previous == "" {
-		fmt.Println("Previous page does not exist")
-		return
-	}
-	config.setPage("previous")
-	location := pokeapi.Location{}
-	var err error
-	var rawData []byte
-
-	// checking cache
-	ch := make(chan cache.CacheData)
-	go cacheStruct.GetEntry(fmt.Sprintf("Page %d", config.page), ch)
-	cacheData := <-ch
-	if cacheData.Found {
-		err = json.Unmarshal(cacheData.Val, &location)
-	} else {
-		location, rawData, err = pokeapi.GetLocationData(config.previous)
-		go cacheStruct.AddEntry(fmt.Sprintf("Page %d", config.page), rawData)
-	}
-
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	if location.Previous != nil {
-		config.previous = location.Previous.(string)
-	} else {
-		config.previous = ""
-	}
-	config.next = location.Next
-	fmt.Printf("Page %d\n", config.page)
-	for _, result := range location.Results {
-		fmt.Println(result.Name)
-	}
-	fmt.Print("\n")
-}
-
-func showNextLocations(config *config, cacheStruct *cache.Cache) {
-	var err error
-	location := pokeapi.Location{}
-	var rawData []byte
-	config.setPage("next")
-
-	// checking cache
-	ch := make(chan cache.CacheData)
-	go cacheStruct.GetEntry(fmt.Sprintf("Page %d", config.page), ch)
-	cacheData := <-ch
-	if cacheData.Found {
-		err = json.Unmarshal(cacheData.Val, &location)
-	} else {
-		location, rawData, err = pokeapi.GetLocationData(config.next)
-		go cacheStruct.AddEntry(fmt.Sprintf("Page %d", config.page), rawData)
-	}
-
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	if location.Previous == nil {
-		config.previous = ""
-	} else {
-		config.previous = location.Previous.(string)
-	}
-	config.next = location.Next
-	fmt.Printf("Page %d\n", config.page)
-	for _, result := range location.Results {
-		fmt.Println(result.Name)
-	}
-	fmt.Print("\n")
-}
-
-func helpMenu(config *config, cache *cache.Cache) {
-	fmt.Print("Usage:\n\n")
-	commands := getCommandTypes()
-	for command := range commands {
-		fmt.Printf("%s: %s\n", commands[command].name, commands[command].description)
-	}
-	fmt.Println("exit: Exits the pokedex")
-	fmt.Print("\n")
-}
-
-func errorMessage(config *config, cache *cache.Cache) {
-	fmt.Println("Invalid command")
 }
 
 func getCommand(command string) cliCommand {

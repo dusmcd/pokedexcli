@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/dusmcd/pokedexcli/cache"
 )
@@ -46,6 +47,13 @@ func session() {
 		if userInput == "exit" {
 			break
 		}
+
+		arguments := strings.Split(userInput, " ")
+		if len(arguments) > 1 {
+			config.argument = arguments[1]
+			userInput = arguments[0]
+		}
+
 		command := getCommand(userInput)
 		command.callback(&config, cache)
 	}
