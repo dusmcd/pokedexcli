@@ -36,7 +36,7 @@ func reapLooper(ticker <-chan time.Time, cache *Cache, intervalInSeconds int) {
 				cache.mu.Unlock()
 			}
 		default:
-			time.Sleep(1 * time.Second)
+			time.Sleep(100 * time.Second)
 		}
 	}
 }

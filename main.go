@@ -3,11 +3,11 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
 	"github.com/dusmcd/pokedexcli/cache"
+	"github.com/dusmcd/pokedexcli/pokeapi"
 )
 
 func main() {
@@ -23,8 +23,7 @@ func getUserInput(scanner *bufio.Scanner) (string, error) {
 
 	err := scanner.Err()
 	if !scan && err != nil {
-		log.Fatal(scanner.Err())
-		return "", scanner.Err()
+		return "", err
 	}
 
 	return input, nil
@@ -35,23 +34,27 @@ func session() {
 		next:     "https://pokeapi.co/api/v2/location/",
 		previous: "",
 		page:     0,
+		pokedex: pokedex{
+			data: make(map[string]pokeapi.PokemonStats),
+		},
 	}
 	reader := bufio.NewReader(os.Stdin)
 	scanner := bufio.NewScanner(reader)
-	cache := cache.NewCache(10)
+	cache := cache.NewCache(120)
 	for {
 		userInput, err := getUserInput(scanner)
 		if err != nil {
+			fmt.Println(err)
 			continue
 		}
 		if userInput == "exit" {
 			break
 		}
 
-		arguments := strings.Split(userInput, " ")
-		if len(arguments) > 1 {
-			config.argument = arguments[1]
-			userInput = arguments[0]
+		inputs := strings.Split(userInput, " ")
+		if len(inputs) > 1 {
+			config.argument = inputs[1]
+			userInput = inputs[0]
 		}
 
 		command := getCommand(userInput)

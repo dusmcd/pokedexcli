@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand"
 
 	"github.com/dusmcd/pokedexcli/cache"
 	"github.com/dusmcd/pokedexcli/pokeapi"
@@ -132,7 +133,7 @@ func errorMessage(config *config, cache *cache.Cache) error {
 func getPokemonInLocation(config *config, cacheStruct *cache.Cache) (pokeapi.Pokemon, error) {
 	url := "https://pokeapi.co/api/v2/location/" + config.argument
 	var err error
-	//var rawData []byte
+	var rawData []byte
 	ch := make(chan cache.CacheData)
 	go cacheStruct.GetEntry(config.argument, ch)
 	cacheData := <-ch
@@ -141,7 +142,7 @@ func getPokemonInLocation(config *config, cacheStruct *cache.Cache) (pokeapi.Pok
 		err = json.Unmarshal(cacheData.Val, &pokemon)
 	} else {
 		pokemon, _, err = pokeapi.GetPokemonInLocation(url)
-		// go cacheStruct.AddEntry(config.argument, rawData)
+		go cacheStruct.AddEntry(config.argument, rawData)
 	}
 	if err != nil {
 		return pokeapi.Pokemon{}, err
@@ -153,14 +154,55 @@ func getPokemonInLocation(config *config, cacheStruct *cache.Cache) (pokeapi.Pok
 callback function for explore <location> command
 */
 func showPokemonInLocation(config *config, cacheStruct *cache.Cache) error {
+	fmt.Println("Exploring " + config.argument + "...")
 	pokemon, err := getPokemonInLocation(config, cacheStruct)
 	if err != nil {
 		return err
 	}
-	fmt.Println("Exploring " + pokemon.Location.Name + "...")
 	for _, pokemonEncounter := range pokemon.PokemonEncounters {
 		fmt.Println("-" + pokemonEncounter.Pokemon.Name)
 	}
 	fmt.Print("\n")
+	return nil
+}
+
+/*
+callback function for catch <pokemon> command
+*/
+func catchPokemon(config *config, cacheStruct *cache.Cache) error {
+	_, found := config.pokedex.data[config.argument]
+	if found {
+		return errors.New("pokemon already caught")
+	}
+	fmt.Println("Throwing a Pokeball at " + config.argument + "...")
+	randomNumber := rand.Float64()
+
+	ch := make(chan cache.CacheData)
+	pokemonStats := pokeapi.PokemonStats{}
+	var err error
+	var rawData []byte
+
+	go cacheStruct.GetEntry(config.argument, ch)
+	cacheData := <-ch
+
+	if cacheData.Found {
+		err = json.Unmarshal(cacheData.Val, &pokemonStats)
+	} else {
+		url := "https://pokeapi.co/api/v2/pokemon/" + config.argument
+		pokemonStats, rawData, err = pokeapi.GetPokemonStats(url)
+		go cacheStruct.AddEntry(config.argument, rawData)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if randomNumber < 0.50 {
+		fmt.Println(config.argument + " caught and added to pokedex!")
+		config.pokedex.add(config.argument, pokemonStats)
+	} else {
+		fmt.Println(config.argument + " escaped!")
+	}
+
 	return nil
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/dusmcd/pokedexcli/cache"
+	"github.com/dusmcd/pokedexcli/pokeapi"
 )
 
 type config struct {
@@ -9,6 +10,7 @@ type config struct {
 	previous string
 	page     int
 	argument string
+	pokedex  pokedex
 }
 
 func (c *config) setPage(command string) {
@@ -23,6 +25,14 @@ type cliCommand struct {
 	name        string
 	description string
 	callback    func(config *config, cache *cache.Cache) error
+}
+
+type pokedex struct {
+	data map[string]pokeapi.PokemonStats
+}
+
+func (p *pokedex) add(pokemonName string, stats pokeapi.PokemonStats) {
+	p.data[pokemonName] = stats
 }
 
 /*
@@ -49,6 +59,11 @@ func getCommandTypes() map[string]cliCommand {
 			name:        "explore <location>",
 			description: "Shows the pokemon found in the given <location>",
 			callback:    showPokemonInLocation,
+		},
+		"catch": {
+			name:        "catch <pokemon>",
+			description: "Catch the specified <pokemon> according to random chance and the pokemon's base experience",
+			callback:    catchPokemon,
 		},
 	}
 }
