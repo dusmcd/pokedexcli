@@ -206,3 +206,24 @@ func catchPokemon(config *config, cacheStruct *cache.Cache) error {
 
 	return nil
 }
+
+func showPokemonInfo(config *config, cacheStruct *cache.Cache) error {
+	pokemon, found := config.pokedex.data[config.argument]
+	if !found {
+		return errors.New("you have not caught that pokemon")
+	}
+	fmt.Println("Name: " + pokemon.Name)
+	fmt.Printf("Height: %d\n", pokemon.Height)
+	fmt.Printf("Weight: %d\n", pokemon.Weight)
+	fmt.Println("Stats:")
+	for _, stat := range pokemon.Stats {
+		fmt.Printf("\t-%s: %d\n", stat.Stat.Name, stat.BaseStat)
+	}
+
+	fmt.Println("Types:")
+	for _, pokemonType := range pokemon.Types {
+		fmt.Println("\t- " + pokemonType.Type.Name)
+	}
+
+	return nil
+}

@@ -65,6 +65,11 @@ func getCommandTypes() map[string]cliCommand {
 			description: "Catch the specified <pokemon> according to random chance and the pokemon's base experience",
 			callback:    catchPokemon,
 		},
+		"inspect": {
+			name:        "inspect <pokemon>",
+			description: "View information about a given <pokemon>",
+			callback:    showPokemonInfo,
+		},
 	}
 }
 
