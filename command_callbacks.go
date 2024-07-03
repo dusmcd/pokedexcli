@@ -196,8 +196,8 @@ func catchPokemon(config *config, cacheStruct *cache.Cache) error {
 	if err != nil {
 		return err
 	}
-
-	if randomNumber < 0.50 {
+	threshold := calculateThreshold(pokemonStats.BaseExperience)
+	if randomNumber < threshold {
 		fmt.Println(config.argument + " caught and added to pokedex!")
 		config.pokedex.add(config.argument, pokemonStats)
 	} else {
@@ -207,6 +207,18 @@ func catchPokemon(config *config, cacheStruct *cache.Cache) error {
 	return nil
 }
 
+func calculateThreshold(baseExperience int) float64 {
+	if baseExperience < 100 {
+		return 0.50
+	} else if baseExperience >= 100 && baseExperience < 150 {
+		return 0.40
+	}
+	return 0.25
+}
+
+/*
+callback function for the inspect <pokemon> command
+*/
 func showPokemonInfo(config *config, cacheStruct *cache.Cache) error {
 	pokemon, found := config.pokedex.data[config.argument]
 	if !found {
