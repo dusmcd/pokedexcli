@@ -239,7 +239,9 @@ func showPokemonInfo(config *config, cacheStruct *cache.Cache) error {
 
 	return nil
 }
-
+/*
+callback function for pokedex command
+*/
 func showPokedex(config *config, cacheStruct *cache.Cache) error {
 	fmt.Println("Your Pokedex:")
 	for pokemon := range config.pokedex.data {
