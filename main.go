@@ -17,7 +17,7 @@ func main() {
 }
 
 func getUserInput(scanner *bufio.Scanner) (string, error) {
-	fmt.Print("pokedex > ")
+	fmt.Print("Pokedex > ")
 	scan := scanner.Scan()
 	input := scanner.Text()
 

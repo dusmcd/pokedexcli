@@ -239,3 +239,11 @@ func showPokemonInfo(config *config, cacheStruct *cache.Cache) error {
 
 	return nil
 }
+
+func showPokedex(config *config, cacheStruct *cache.Cache) error {
+	fmt.Println("Your Pokedex:")
+	for pokemon := range config.pokedex.data {
+		fmt.Println("\t- " + config.pokedex.data[pokemon].Name)
+	}
+	return nil
+}
