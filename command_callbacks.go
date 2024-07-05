@@ -141,7 +141,7 @@ func getPokemonInLocation(config *config, cacheStruct *cache.Cache) (pokeapi.Pok
 	if cacheData.Found {
 		err = json.Unmarshal(cacheData.Val, &pokemon)
 	} else {
-		pokemon, _, err = pokeapi.GetPokemonInLocation(url)
+		pokemon, rawData, err = pokeapi.GetPokemonInLocation(url)
 		go cacheStruct.AddEntry(config.argument, rawData)
 	}
 	if err != nil {
@@ -239,6 +239,7 @@ func showPokemonInfo(config *config, cacheStruct *cache.Cache) error {
 
 	return nil
 }
+
 /*
 callback function for pokedex command
 */
